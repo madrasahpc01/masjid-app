@@ -573,6 +573,74 @@
     .yt-dot.active-dot {
       background-color: var(--accent);
     }
+
+    .video-carousel {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 100%;
+      margin: 20px auto;
+    }
+
+    .video-track {
+      display: flex;
+      transition: transform 0.35s ease;
+    }
+
+    .video-slide {
+      min-width: 100%;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .video-thumb {
+      width: 100%;
+      border-radius: 12px;
+    }
+
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: white;
+      text-shadow: 0 0 10px black;
+      pointer-events: none;
+    }
+
+    .video-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .video-nav button {
+      background: #111827;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 20px;
+    }
+
+    .video-dots {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .video-dots span {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #bbb;
+      border-radius: 50%;
+      margin: 0 4px;
+    }
+
+    .video-dots .active {
+      background: #111827;
+    }
   </style>
 </head>
 <body>
@@ -666,10 +734,9 @@
 
     <!-- Monthly Timetable Link -->
     <div class="footer-note" style="margin-top:12px; text-align:center;">
-      <a href="https://umarmasjid.org.uk/"
-         rel="noopener noreferrer"
-         style="color:var(--primary); font-weight:600; text-decoration:none;">
-        Click here to see the monthly prayer timetable
+      <a href="timetable.html"
+        style="color:var(--primary); font-weight:600; text-decoration:none;">
+       Click here to see the monthly prayer timetable
       </a>
     </div>
 
@@ -818,34 +885,34 @@
     <div class="section-sub">Important Events</div>
   </div>
 
-  <!-- YouTube Slideshow -->
-  <div class="yt-slideshow-container">
+  <div class="video-carousel">
 
-    <!-- Slide 1 -->
-    <div class="yt-slide youtube-slide" data-video="4zM4aNyD3Kw">
-      <img class="yt-thumb" src="https://img.youtube.com/vi/4zM4aNyD3Kw/hqdefault.jpg">
-      <div class="play-btn">▶</div>
+    <div class="video-track">
+
+      <div class="video-slide" data-video="4zM4aNyD3Kw">
+        <img class="video-thumb" src="https://img.youtube.com/vi/4zM4aNyD3Kw/hqdefault.jpg">
+        <div class="play-btn">▶</div>
+      </div>
+
+      <div class="video-slide" data-video="5-oqmaEa1WM">
+        <img class="video-thumb" src="https://img.youtube.com/vi/5-oqmaEa1WM/hqdefault.jpg">
+        <div class="play-btn">▶</div>
+      </div>
+
+      <div class="video-slide" data-video="YI7yxas2n_g">
+        <img class="video-thumb" src="https://img.youtube.com/vi/YI7yxas2n_g/hqdefault.jpg">
+        <div class="play-btn">▶</div>
+      </div>
+
     </div>
 
-    <!-- Slide 2 -->
-    <div class="yt-slide youtube-slide" data-video="5-oqmaEa1WM">
-      <img class="yt-thumb" src="https://img.youtube.com/vi/5-oqmaEa1WM/hqdefault.jpg">
-      <div class="play-btn">▶</div>
+    <div class="video-nav">
+      <button id="prevVideo">‹</button>
+      <button id="nextVideo">›</button>
     </div>
 
-    <!-- Slide 3 -->
-    <div class="yt-slide youtube-slide" data-video="YI7yxas2n_g">
-      <img class="yt-thumb" src="https://img.youtube.com/vi/YI7yxas2n_g/hqdefault.jpg">
-      <div class="play-btn">▶</div>
-    </div>
+    <div class="video-dots"></div>
 
-  </div>
-
-  <!-- Dots -->
-  <div style="text-align:center;margin-top:8px;">
-    <span class="yt-dot"></span>
-    <span class="yt-dot"></span>
-    <span class="yt-dot"></span>
   </div>
 
   <div class="footer-note">Watch the latest masjid highlights and announcements.</div>
@@ -1826,32 +1893,6 @@ async function loadWeather() {
    23. YouTube slideshow auto
    =========================== */
 
-let ytIndex = 0;
-function ytShowSlides() {
-  let slides = document.getElementsByClassName("yt-slide");
-  let dots = document.getElementsByClassName("yt-dot");
-  if (!slides.length) return;
-
-  for (let i = 0; i < slides.length; i++) {
-    slides[i].style.display = "none";
-  }
-
-  ytIndex++;
-  if (ytIndex > slides.length) ytIndex = 1;
-
-  for (let i = 0; i < dots.length; i++) {
-    dots[i].className = dots[i].className.replace(" active-dot", "");
-  }
-
-  slides[ytIndex - 1].style.display = "block";
-  if (dots[ytIndex - 1]) {
-    dots[ytIndex - 1].className += " active-dot";
-  }
-
-  setTimeout(ytShowSlides, 4000);
-}
-ytShowSlides();
-
 /* ===========================
    24. Audio unlock for mobile
    =========================== */
@@ -1864,8 +1905,94 @@ document.body.addEventListener("click", function () {
   }
 }, { once: true });
 
+/*  ==============================
+    25. VIDEO CAROUSEL INITIALIZER
+    ============================== */
+
+let currentVideoIndex = 0;
+
+const track = document.querySelector(".video-track");
+const slides = document.querySelectorAll(".video-slide");
+const dotsContainer = document.querySelector(".video-dots");
+
+// Create dots
+slides.forEach((_, i) => {
+  const dot = document.createElement("span");
+  if (i === 0) dot.classList.add("active");
+  dotsContainer.appendChild(dot);
+});
+
+const dots = document.querySelectorAll(".video-dots span");
+
+function updateCarousel() {
+  track.style.transform = `translateX(-${currentVideoIndex * 100}%)`;
+
+  dots.forEach(d => d.classList.remove("active"));
+  dots[currentVideoIndex].classList.add("active");
+}
+
+// Manual navigation
+document.getElementById("prevVideo").addEventListener("click", () => {
+  currentVideoIndex = (currentVideoIndex - 1 + slides.length) % slides.length;
+  updateCarousel();
+});
+
+document.getElementById("nextVideo").addEventListener("click", () => {
+  currentVideoIndex = (currentVideoIndex + 1) % slides.length;
+  updateCarousel();
+});
+
+// Tap to play video
+slides.forEach(slide => {
+  slide.addEventListener("click", () => {
+    const videoId = slide.dataset.video;
+    slide.innerHTML = `
+      <iframe width="100%" height="220"
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        style="border-radius:12px;">
+      </iframe>
+    `;
+  });
+});
+
+// Swipe support
+let startX = 0;
+
+track.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+});
+
+track.addEventListener("touchend", e => {
+  const endX = e.changedTouches[0].clientX;
+  const diff = endX - startX;
+
+  if (Math.abs(diff) > 50) {
+    if (diff < 0) currentVideoIndex = (currentVideoIndex + 1) % slides.length;
+    else currentVideoIndex = (currentVideoIndex - 1 + slides.length) % slides.length;
+
+    updateCarousel();
+  }
+});
+
+updateCarousel();
+
 /* ===========================
-   25. Kickoff
+   26. Back to Main App
+   =========================== */
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("a[target='_blank']").forEach(link => {
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.location.href = this.href;
+    });
+  });
+});
+
+/* ===========================
+   27. Kickoff
    =========================== */
 
 init();
