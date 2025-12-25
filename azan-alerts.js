@@ -52,6 +52,19 @@ function getCurrentTime() {
 }
 
 /* ---------------------------------------------------------
+   Helper: Subtract minutes from HH:MM
+--------------------------------------------------------- */
+function subtractMinutes(timeStr, minutes) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const date = new Date();
+  date.setHours(h, m - minutes, 0, 0);
+
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+/* ---------------------------------------------------------
    4. Helper: Read prayer times from DOM
 --------------------------------------------------------- */
 function getPrayerTimes() {
@@ -147,20 +160,28 @@ function checkAzanAlert() {
 
   const times = getPrayerTimes();
 
-  for (const [prayer, time] of Object.entries(times)) {
-    if (!time) continue;
+    for (const [prayer, time] of Object.entries(times)) {
+      if (!time) continue;
 
-    // Skip if toggle is OFF
-    if (!loadToggle(prayer)) continue;
+      // Skip if toggle is OFF
+      if (!loadToggle(prayer)) continue;
 
-    if (currentTime === time) {
-      if (!azanPlayed) {
-        showPopup(`🔊 ${prayer} Time`);
-        audio.play().catch(() => {});
-        azanPlayed = true;
+      // Default alert time = exact time
+      let alertTime = time;
+
+      // Apply 15‑minute early alert for Dhuhr, Asr, Isha
+      if (prayer === "Dhuhr" || prayer === "Asr" || prayer === "Isha") {
+        alertTime = subtractMinutes(time, 15);
       }
-      return;
-    }
+
+      if (currentTime === alertTime) {
+        if (!azanPlayed) {
+          showPopup(`🔊 ${prayer} Time`);
+          audio.play().catch(() => {});
+          azanPlayed = true;
+        }
+        return;
+      }
   }
 
   azanPlayed = false;
@@ -173,3 +194,4 @@ setInterval(() => {
   checkAzanAlert();
   checkJumuahAlert();
 }, 1000);
+
