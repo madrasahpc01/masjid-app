@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monthly Prayer Timetable</title>
+
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --primary: #2563eb;
+    --border: #1f2937;
+    --accent: #22c55e;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Slide‑in animation */
+  .slide-in {
+    animation: slideIn 0.45s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Top bar */
+  .top-bar {
+    background: var(--card);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+  }
+
+  .btn {
+    background: var(--primary);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .pdf-btn {
+    background: var(--accent);
+  }
+
+  /* Progress bar */
+  #progressBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--primary);
+    transition: width 0.2s ease;
+  }
+
+  /* Pull‑to‑refresh indicator */
+  #pullRefresh {
+    text-align: center;
+    padding: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    display: none;
+  }
+
+  iframe {
+    width: 100%;
+    height: calc(100vh - 60px);
+    border: none;
+    display: block;
+  }
+
+  #offlineBox {
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+</head>
+<body class="slide-in">
+
+<!-- Progress Bar -->
+<div id="progressBar"></div>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <button class="btn" onclick="window.location.href='index.html'">⬅ Back</button>
+  <button class="btn" onclick="reloadIframe()">⟳ Reload</button>
+  <button class="btn pdf-btn" onclick="downloadPDF()">⬇ PDF</button>
+  <div style="font-size:16px; font-weight:600; margin-left:auto;">Timetable</div>
+</div>
+
+<div id="offlineBox" style="
+  display:none;
+  background: #dc2626;
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+">
+  ⚠ You are offline. Please check your internet connection.
+</div>
+
+<!-- Pull‑to‑refresh -->
+<div id="pullRefresh">↓ Pull to refresh</div>
+
+<!-- Timetable iframe -->
+<iframe id="timetableFrame" src="https://www.umarmasjid.org.uk/"></iframe>
+
+<script>
+const iframe = document.getElementById("timetableFrame");
+const progressBar = document.getElementById("progressBar");
+const pullRefresh = document.getElementById("pullRefresh");
+
+/* PROGRESS BAR LOADING */
+function startProgress() {
+  progressBar.style.width = "0%";
+  setTimeout(() => progressBar.style.width = "40%", 50);
+  setTimeout(() => progressBar.style.width = "70%", 300);
+}
+
+function finishProgress() {
+  progressBar.style.width = "100%";
+  setTimeout(() => progressBar.style.width = "0%", 500);
+}
+
+startProgress();
+
+iframe.onload = () => {
+  finishProgress();
+};
+
+/* Reload button */
+function reloadIframe() {
+  startProgress();
+  iframe.src = iframe.src;
+}
+
+/* PDF Download */
+function downloadPDF() {
+  window.open("https://www.umarmasjid.org.uk/wp-content/uploads/2024/12/Prayer-Timetable.pdf", "_blank");
+}
+
+/* SWIPE‑BACK GESTURE */
+let startX = 0;
+
+document.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+});
+
+document.addEventListener("touchend", e => {
+  const diff = e.changedTouches[0].clientX - startX;
+
+  if (diff > 80) {
+    window.location.href = "index.html";
+  }
+});
+
+/* PULL‑TO‑REFRESH */
+let startY = 0;
+let isPulled = false;
+
+document.addEventListener("touchstart", e => {
+  startY = e.touches[0].clientY;
+});
+
+document.addEventListener("touchmove", e => {
+  const diff = e.touches[0].clientY - startY;
+
+  if (diff > 60 && window.scrollY === 0) {
+    pullRefresh.style.display = "block";
+    pullRefresh.textContent = "↻ Release to refresh";
+    isPulled = true;
+  }
+});
+
+document.addEventListener("touchend", () => {
+  if (isPulled) {
+    pullRefresh.textContent = "Refreshing…";
+    reloadIframe();
+    setTimeout(() => {
+      pullRefresh.style.display = "none";
+      isPulled = false;
+    }, 800);
+  } else {
+    pullRefresh.style.display = "none";
+  }
+});
+
+/* OFFLINE DETECTION */
+function updateOnlineStatus() {
+  const offlineBox = document.getElementById("offlineBox");
+
+  if (!navigator.onLine) {
+    offlineBox.style.display = "block";
+    iframe.style.display = "none";
+    progressBar.style.width = "0%";
+  } else {
+    offlineBox.style.display = "none";
+    iframe.style.display = "block";
+    reloadIframe(); // auto-reload when back online
+  }
+}
+
+window.addEventListener("online", updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
+
+// Initial check
+updateOnlineStatus();
+
+</script>
+
+</body>
+</html>
