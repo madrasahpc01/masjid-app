@@ -107,7 +107,6 @@
 <div class="top-bar">
   <button class="btn" onclick="window.location.href='index.html'">⬅ Back</button>
   <button class="btn" onclick="reloadIframe()">⟳ Reload</button>
-  <button class="btn pdf-btn" onclick="downloadPDF()">⬇ PDF</button>
   <div style="font-size:16px; font-weight:600; margin-left:auto;">Timetable</div>
 </div>
 
@@ -155,11 +154,6 @@ iframe.onload = () => {
 function reloadIframe() {
   startProgress();
   iframe.src = iframe.src;
-}
-
-/* PDF Download */
-function downloadPDF() {
-  window.open("https://www.umarmasjid.org.uk/wp-content/uploads/2024/12/Prayer-Timetable.pdf", "_blank");
 }
 
 /* SWIPE‑BACK GESTURE */
