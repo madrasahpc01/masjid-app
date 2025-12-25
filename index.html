@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mosque Prayer Times</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #1f2937;
+      --primary: #2563eb;
+      --shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+    :root.light {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --border: #e5e7eb;
+      --primary: #1d4ed8;
+      --shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      margin: 0;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 56px 1fr 40px;
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(34,197,94,0.08));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: static; /* or simply remove position + top */
+      top: 12px;
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+    .logo {
+      width: 56px; height: 60px; border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: grid; place-items: center;
+      overflow: hidden;
+    }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brand {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .brand .name { font-weight: 700; letter-spacing: 0.2px; }
+    .brand .dates { font-size: 13px; color: var(--muted); }
+    .toggle {
+      width: 40px; height: 40px; display: grid; place-items: center;
+      border-radius: 10px; background: var(--card); border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .gregorian {
+      color: #DAA520;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .hijri {
+      color: #FF00FF;
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    .clock-section {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .digital-clock {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .upcoming-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .upcoming-info {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    #analogueClock {
+      margin-top: 15px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #analogueClock,
+    #qiblaCompass {
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.15);
+      border: 2px solid var(--border); /* subtle border */
+    }
+
+    .analogue-wrapper,
+    .qibla-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .analogue-label {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    /* 2×2 table layout for clocks */
+    .clock-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+      margin-top: 20px;
+      justify-items: center;
+      align-items: center;
+    }
+
+    /* Each cell centers its content */
+    .clock-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Labels under clocks */
+    .analogue-label,
+    .qibla-label {
+      font-size: 15px;
+      margin-top: 6px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* Icons under labels */
+    .analogue-icon,
+    .kaaba-small-icon {
+      font-size: 22px;
+      margin-top: 4px;
+      opacity: 0.85;
+    }
+    /* Vertical divider between the two columns */
+    .clock-table {
+      position: relative;
+    }
+
+    .clock-table::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        var(--accent) 50%,
+        transparent 100%
+      );
+      opacity: 0.9;
+      animation: tickerMove 2.2s linear infinite;
+      border-radius: 2px;
+    }
+
+    /* Ticker animation */
+    @keyframes tickerMove {
+      0% {
+        background-position: 0% -100%;
+      }
+      100% {
+        background-position: 0% 200%;
+      }
+    }
+
+    /* Subtle border around both clocks */
+    #analogueClock,
+    #qiblaCompass {
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.15);
+      border: 2px solid var(--border);
+    }
+
+    /* Qibla compass wrapper */
+    .qibla-compass-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      #analogueClock,
+      #qiblaCompass {
+        width: 150px !important;
+        height: 150px !important;
+      }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .section-title {
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      margin-bottom: 8px; 
+      font-weight: 700; 
+      font-size: 20px
+    }
+    /* Force center alignment for Latest Blogs title */
+    .blogs-card .section-title {
+      justify-content: center !important;
+      text-align: center;
+    }
+    .section-sub { font-size: 13px; color: var(--muted); }
+    .times {
+      display: grid;
+      grid-template-columns: 1fr 80px 36px;
+      row-gap: 10px;
+      column-gap: 8px;
+      align-items: center;
+    }
+    .times .name { 
+      text-align: left !important;
+      justify-self: start !important;
+      padding-left: 4px;
+    }
+
+    .badge {
+      font-size: 12px; color: var(--muted);
+      padding: 5px 8px; border-radius: 10px; border: 1px dashed var(--border);
+      text-align: center;
+    }
+    .notify-toggle {
+      width: 36px; height: 22px; border-radius: 12px; position: relative; cursor: pointer;
+      background: #334155; border: 1px solid var(--border);
+    }
+    .notify-toggle.active { background: var(--primary); }
+    .notify-toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      transition: all 0.2s ease;
+    }
+    .notify-toggle.active::after { left: 16px; }
+
+    .footer-note {
+      font-size: 12px; color: var(--muted);
+      text-align: center; margin-top: 16px;
+    }
+    .slideshow-container {
+      position: relative;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    .slide {
+      display: none;
+    }
+
+    .fade {
+      animation-name: fade;
+      animation-duration: 1.5s;
+    }
+
+    @keyframes fade {
+      from {opacity: .4} 
+      to {opacity: 1}
+    }
+
+    .dot {
+      height: 10px;
+      width: 10px;
+      margin: 0 3px;
+      background-color: var(--muted);
+      border-radius: 50%;
+      display: inline-block;
+      transition: background-color 0.6s ease;
+    }
+    
+    /* Row for Analogue Clock + Qibla Compass */
+    .clock-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    /* Qibla compass wrapper */
+    .qibla-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .qibla-label {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .facing-qibla {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* Ensure both canvases stay round and equal */
+    #analogueClock,
+    #qiblaCompass {
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(0,0,0,0.15);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 480px) {
+      #analogueClock,
+      #qiblaCompass {
+        width: 150px !important;
+        height: 150px !important;
+      }
+    }
+
+    /* Pulse animation for Directions button */
+    .pulse-btn {
+      position: relative;
+      overflow: visible;
+    }
+
+    .pulse-btn::after {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      border-radius: 12px;
+      border: 2px solid var(--primary);
+      opacity: 0.6;
+      animation: pulseAnim 1.8s infinite ease-out;
+    }
+
+    @keyframes pulseAnim {
+      0% {
+        transform: scale(0.9);
+        opacity: 0.7;
+      }
+      70% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+    }
+    .active-dot {
+      background-color: var(--accent);
+    }
+    /* Responsive */
+    @media (min-width: 560px) {
+      .app { padding: 20px; }
+      header { top: 20px; }
+    }
+    /* Force Contact & Location title to align left */
+    footer .section-title {
+      justify-content: flex-start !important;
+    }
+    /* Contact & Location row layout */
+    .contact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Left side: icon + title */
+    .contact-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Right side: weather box */
+    .weather-right {
+      text-align: right;
+      min-width: 120px;
+      line-height: 1.2;
+    }
+    /* Header row layout */
+    .contact-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    /* Left side */
+    .contact-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Right side (weather) */
+    .weather-right {
+      text-align: right;
+      min-width: 120px;
+      line-height: 1.2;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    /* Divider under header */
+    .contact-divider {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      opacity: 0.7;
+      margin: 10px 0 14px 0;
+    }
+
+    /* Grid layout for 6 blog cards */
+    .blogs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    /* Blog card box */
+    .blog-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 10px;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Preview text (collapsed) */
+    .blog-preview {
+      opacity: 0.7;
+      max-height: 40px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    /* Expanded preview */
+    .blog-preview.expanded {
+      max-height: 200px;
+    }
+
+    /* Read more button */
+    .read-more {
+      margin-top: 8px;
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      text-align: left;
+    }
+
+    .blog-preview {
+      max-height: 90px;        /* adjust height as you like */
+      overflow-y: auto;        /* scrollbar only when needed */
+      padding-right: 6px;      /* space for scrollbar */
+    }
+
+    /* Optional: nicer scrollbar */
+    .blog-preview::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .blog-preview::-webkit-scrollbar-thumb {
+      background: var(--muted);
+      border-radius: 4px;
+    }
+
+    .blog-preview::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .youtube-slide {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .yt-thumb {
+      width: 100%;
+      border-radius: 12px;
+    }
+
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 38px;
+      padding: 12px 20px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* YouTube slideshow slides */
+    .yt-slide {
+      display: none;              /* same behavior as .slide */
+    }
+
+    /* YouTube dots */
+    .yt-dot {
+      height: 10px;
+      width: 10px;
+      margin: 0 3px;
+      background-color: var(--muted);
+      border-radius: 50%;
+      display: inline-block;
+      transition: background-color 0.6s ease;
+    }
+
+    /* Active dot */
+    .yt-dot.active-dot {
+      background-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <a href="#" class="logo">
+          <img src="logo.png" alt="Umar Masjid UKIM Logo">
+        </a>
+      </div>
+      <div class="brand">
+        <div class="name" id="mosqueName">UKIM - Umar Masjid Blackheath</div>
+        <div id="dateDisplay">Loading...</div>
+      </div>
+      <button class="toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <svg id="themeIcon" width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm8 9a1 1 0 0 1 1 1h1a1 1 0 1 1 0 2h-1a1 1 0 0 1-1-1 1 1 0 0 1 1-2ZM4 12a1 1 0 0 1-1 1H2a1 1 0 1 1 0-2h1a1 1 0 0 1 1 1Zm15.657-6.657a1 1 0 0 1 0 1.414l-.707.707a1 1 0 1 1-1.414-1.414l.707-.707a1 1 0 0 1 1.414 0ZM7.464 18.88a1 1 0 0 1 0 1.414l-.707.707A1 1 0 1 1 5.343 19.586l.707-.707a1 1 0 0 1 1.414 0Z" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+      </button>
+    </header>
+
+    <div class="clock-section">
+      <div id="digitalClock" class="digital-clock">--:--:--</div>
+      <div class="upcoming-title">Upcoming Prayer</div>
+      <div class="upcoming-info">
+        <span id="nextPrayerName">--</span>
+        <div class="section-sub">Starting in</div>
+        <span id="nextPrayerCountdown">--:--:--</span>
+      </div>
+    
+<div class="clock-table">
+
+  <!-- Row 1 -->
+  <div class="clock-cell">
+    <canvas id="analogueClock" width="180" height="180"></canvas>
+  </div>
+
+  <div class="clock-cell">
+    <div class="qibla-compass-container">
+      <canvas id="qiblaCompass" width="180" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="clock-cell">
+    <div class="analogue-label">🕌 Next Prayer At</div>
+    <div class="analogue-label"><-------></div>
+  </div>
+
+  <div class="clock-cell">
+    <div class="qibla-label">🕋 Qibla Direction</div>
+    <div id="facingQibla" class="facing-qibla">Calculating…</div>
+  </div>
+
+</div>
+
+<div class="grid">
+  <div class="card">
+
+    <!-- Title (unchanged, safe) -->
+    <div class="section-title" style="position:relative;">
+      <div>Today's Prayer Timings</div>
+      <div class="section-sub" id="locationLabel" style="display:none;"></div>
+    </div>
+
+    <!-- NEW Subtitle (safe, independent) -->
+    <div style="font-size:12px; color:var(--muted); margin-top:-6px; text-align:right; margin-bottom:10px;">
+      Enable alerts
+    </div>
+
+    <!-- Prayer Times Grid (untouched) -->
+    <div class="times" id="timesGrid"></div>
+
+    <!-- Go to Mosque Button (bottom, safe) -->
+    <div style="text-align:center; margin-top:16px;">
+      <button id="directionsBtn"
+              class="pulse-btn"
+              style="
+                background: var(--primary);
+                color: #fff;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+              ">
+        Go to Mosque
+      </button>
+    </div>
+
+    <!-- Monthly Timetable Link -->
+    <div class="footer-note" style="margin-top:12px; text-align:center;">
+      <a href="https://umarmasjid.org.uk/"
+         rel="noopener noreferrer"
+         style="color:var(--primary); font-weight:600; text-decoration:none;">
+        Click here to see the monthly prayer timetable
+      </a>
+    </div>
+
+  </div>
+</div>
+
+
+
+      <!-- Jumuah countdown card -->
+      <div class="card">
+        <div class="section-title">
+          <div>Jummah (Friday prayer)</div>
+          <div class="section-sub">Time Remaining</div>
+        </div>
+        <div class="times">
+          <div class="name">Urdu Speech Starts at 12:30</div>
+          <div class="name">Khutbah at 13:00</div>
+          <div class="notify-toggle" id="toggleJumuah" aria-label="Enable Jumuah alert"></div>
+        </div>
+        <!-- Countdown on its own line -->
+        <div id="jumuahCountdown" 
+             style="display:block;text-align:center;font-weight:700;font-size:24px;color:var(--accent);margin-top:10px">
+          --:--:--
+        </div>
+        <div class="footer-note">Enable Jumuah alert fires 45 minutes before Khutbah on every Friday.</div>
+      </div>
+
+    <!-- Blogs Card -->
+    <div class="card blogs-card" style="margin-top:20px;">
+
+      <!-- Header -->
+      <div class="section-title" style="display:flex; align-items:center; gap:10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22h11a2.5 2.5 0 0 0 2.5-2.5V6H4v13.5Z"/>
+          <path d="M4 6V3.5A2.5 2.5 0 0 1 6.5 1h11A2.5 2.5 0 0 1 20 3.5V6"/>
+          <path d="M8 11h8"/>
+          <path d="M8 15h5"/>
+        </svg>
+        <div>Umar Masjid Blogs</div>
+      </div>
+
+      <!-- Blog #1 (Full Width) -->
+      <div style="margin-top:10px; line-height:1.6;">
+        <strong>Welcome to Umar Masjid - UK Islamic Mission</strong><br>
+        <span style="opacity:0.7;">A place of Masjid, Madrasah, Youth & Community Centre to share updates, reflections, and community news.</span>
+      </div>
+
+      <!-- Grid for Remaining 6 Blogs -->
+      <div class="blogs-grid">
+
+        <!-- Blog Cards (6 total) -->
+        <div class="blog-card">
+          <strong>📖 Quran Madrasah</strong>
+          <p class="blog-preview">Every afternoon, from 5PM to 7PM our mosque comes alive with the gentle hum of children reciting the words of Allah. Our Quran Madrasah is more than a classroom It is a space where faith, discipline, and joy come together to shape the next generation. Our Madrasah is one UKIM branch and our students are learning Qaida, Tajweed, Quran Recitation, Hifz, Hadith & Islamic Studiesfor more details, please see the video of our Madrasah in video display section.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+        <div class="blog-card">
+          <strong>🌙 Regular Quran Classes</strong>
+          <p class="blog-preview">Our mosque holds regular Quran Grammar Classes for adults every Monday and Friday in Urdu, and every Wednesday in English. These sessions give learners an excellent opportunity to understand the language of the Qur’an, learn word meanings, and grasp the essential rules of Arabic grammar. Classes usually begin at 7 PM and run for one hour, but timings may vary depending on the prayer schedule. During winter, when Isha begins at 7 PM, the Quran Grammar Class starts immediately after Salah.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+        <div class="blog-card">
+          <strong>🌸 Sisters’ Circles</strong>
+          <p class="blog-preview">A Space for Learning & Connection. Every week, our mosque opens its doors to a beautiful gathering of sisters who come together to learn, reflect, and grow in their understanding of Islam. Our Sisters’ Circles run every Tuesday and Sunday, offering a welcoming space where women of all ages can connect, ask questions, and deepen their relationship with Allah.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+        <div class="blog-card">
+          <strong>🌟 Mini Muslims</strong>
+          <p class="blog-preview">Growing Little Hearts Every Sunday, from 11:00 AM to 12:30 PM, our mosque welcomes young children to our Mini Muslims class — a joyful space where little ones learn about Islam through stories, crafts, and engaging activities. These weekly sessions help children build a loving connection with Allah, learn basic Islamic manners, and understand simple concepts from the Qur’an and Sunnah in a fun, age‑appropriate way. Parents love seeing their children excited to come each week, and the kids enjoy learning alongside friends in a warm, caring environment.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+        <div class="blog-card">
+          <strong>🍽️ Monthly Food Hub</strong>
+          <p class="blog-preview">Supporting Our Community. Every last Saturday of the month, our mosque hosts a warm and welcoming Food Hub, Families and individuals visit to collect essential food items, enjoy friendly conversations, and feel the comfort of a caring environment. This monthly initiative continues to grow, with volunteers and visitors alike contributing to a spirit of generosity and togetherness that strengthens our community. We welcome everyone to join and collect food without any hesitation.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+        <div class="blog-card">
+          <strong>🕌 Masjid Improvements</strong>
+          <p class="blog-preview">Building a Better Space for All. Our masjid is continually growing and improving, Alhamdulillah. Recent upgrades have helped create a cleaner, safer, and more welcoming environment for worshippers of all ages. From enhanced facilities to better organisation and community services, each improvement reflects our shared commitment to making the masjid a place of comfort, learning, and spiritual connection. These efforts are only possible through the dedication of volunteers and the generosity of our community, and we pray that every step forward becomes a source of ongoing reward.</p>
+          <button class="read-more">Read more</button>
+        </div>
+
+      </div>
+
+      <div style="text-align:center; margin-top:14px;">
+        <a href="blogs.html" style="color:var(--primary); font-weight:600; text-decoration:none;">
+          View All Blogs
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Picture Slideshow -->
+    <div class="card">
+      <div class="section-title">
+        <div>Umar Mosque Gallery</div>
+        <div class="section-sub">Slide Show</div>
+      </div>
+      <div class="slideshow-container">
+        <div class="slide fade">
+          <img src="images/pic1.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic2.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic3.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic4.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic5.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic6.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic7.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic8.jpg" style="width:100%;border-radius:12px;">
+        </div>
+        <div class="slide fade">
+          <img src="images/pic9.jpg" style="width:100%;border-radius:12px;">
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:8px;">
+        <span class="dot"></span> 
+        <span class="dot"></span> 
+        <span class="dot"></span> 
+        <span class="dot"></span> 
+      </div>
+    </div>
+
+    <!-- Video Card (YouTube Slideshow) -->
+<div class="card">
+  <div class="section-title">
+    <div>Video Display</div>
+    <div class="section-sub">Important Events</div>
+  </div>
+
+  <!-- YouTube Slideshow -->
+  <div class="yt-slideshow-container">
+
+    <!-- Slide 1 -->
+    <div class="yt-slide youtube-slide" data-video="4zM4aNyD3Kw">
+      <img class="yt-thumb" src="https://img.youtube.com/vi/4zM4aNyD3Kw/hqdefault.jpg">
+      <div class="play-btn">▶</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="yt-slide youtube-slide" data-video="5-oqmaEa1WM">
+      <img class="yt-thumb" src="https://img.youtube.com/vi/5-oqmaEa1WM/hqdefault.jpg">
+      <div class="play-btn">▶</div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="yt-slide youtube-slide" data-video="YI7yxas2n_g">
+      <img class="yt-thumb" src="https://img.youtube.com/vi/YI7yxas2n_g/hqdefault.jpg">
+      <div class="play-btn">▶</div>
+    </div>
+
+  </div>
+
+  <!-- Dots -->
+  <div style="text-align:center;margin-top:8px;">
+    <span class="yt-dot"></span>
+    <span class="yt-dot"></span>
+    <span class="yt-dot"></span>
+  </div>
+
+  <div class="footer-note">Watch the latest masjid highlights and announcements.</div>
+</div>
+
+        <!-- Mosque Facilities Card -->
+    <div class="card">
+      <div class="section-title">
+        <div>Mosque Facilities</div>
+        <div class="section-sub">Available (✔) & Not Available (✘) Services</div>
+      </div>
+
+          <table style="width:100%; border-collapse: collapse; text-align:left; font-size:15px;">
+        <tr>
+          <td>Car Park</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+          <td>Disabled Parking</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+        </tr>
+
+        <tr>
+          <td>Women Praying Area</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+          <td>Men Toilet Facilities</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+        </tr>
+
+        <tr>
+          <td>Women Toilet Facilities</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+          <td>Funeral Prayer</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+        </tr>
+
+        <tr>
+          <td>Eitikaaf in Ramadan</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+          <td>EV Charging Unit</td>
+          <td style="color:var(--danger); font-weight:700;">✘</td>
+        </tr>
+
+        <tr>
+          <td>Shoe Racks</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+          <td>Library</td>
+          <td style="color:var(--accent); font-weight:700;">✔</td>
+        </tr>
+      </table>
+
+      <div class="footer-note">Facilities available at the masjid for the community.</div>
+    </div>
+
+<!-- Footer: Contact & Location -->
+<footer class="card" style="margin-top:20px; padding-bottom:20px;">
+  <div class="contact-header">
+
+    <!-- LEFT: Title -->
+    <div class="contact-left">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0Z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <div>Contact & Location</div>
+    </div>
+
+    <!-- RIGHT: Weather -->
+    <div id="weatherBox" class="weather-right">
+      Loading weather…
+    </div>
+
+  </div>
+
+<!-- Divider -->
+<div class="contact-divider"></div>
+
+</div>
+  <div style="font-size:15px; line-height:1.6; margin-bottom:12px;">
+    <strong>UKIM – Umar Masjid Blackheath</strong><br>
+    318 Long Lane, Blackheath, Halesowen, B62 9LD<br>
+    <strong>Phone:</strong> 0121 559 1896<br>
+    <strong>Web:</strong> https://www.umarmasjid.org.uk/
+  </div>
+
+  <!-- OpenStreetMap Embed (No API Key Needed) -->
+  <div style="width:100%; height:260px; border-radius:12px; overflow:hidden; margin-bottom:10px;">
+    <iframe 
+      width="100%" 
+      height="100%" 
+      frameborder="0" 
+      scrolling="no" 
+      marginheight="0" 
+      marginwidth="0"
+      src="https://www.openstreetmap.org/export/embed.html?bbox=-2.0365%2C52.4695%2C-2.0335%2C52.4723&layer=mapnik&marker=52.4709%2C-2.0349">
+    </iframe>
+  </div>
+
+  <div style="text-align:center; margin-top:6px;">
+    <a href="https://www.openstreetmap.org/?mlat=52.4709&mlon=-2.0349#map=18/52.4709/-2.0349"
+       style="color:var(--primary); font-weight:600; text-decoration:none;">
+      View Larger Map
+    </a>
+  </div>
+</footer>
+
+  </div>
+
+  <audio id="azanAudio" preload="auto"
+    src="https://cdn.islamic.network/audio/adhan/adhan.mp3"></audio>
+
+<script>
+if (!navigator.onLine) {
+  console.warn("Offline mode detected");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+
+/* ===========================
+   1. Hijri + Gregorian display
+   =========================== */
+
+// Hijri + Gregorian display (Hijri +1)
+async function fetchHijriDate() {
+  try {
+    const today = new Date();
+    const dayName = today.toLocaleDateString("en-GB", { weekday: "long" });
+    const gregorianDate = today.toLocaleDateString("en-GB", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+
+    const adjustedDate = new Date(today);
+    adjustedDate.setDate(adjustedDate.getDate());
+
+    const dd = String(adjustedDate.getDate()).padStart(2, "0");
+    const mm = String(adjustedDate.getMonth() + 1).padStart(2, "0");
+    const yyyy = adjustedDate.getFullYear();
+    const formattedDate = `${dd}-${mm}-${yyyy}`;
+
+    let data;
+    try {
+      const response = await fetch(`https://api.aladhan.com/v1/gToH?date=${formattedDate}`);
+      data = await response.json();
+    } catch (err) {
+      console.warn("Hijri API failed, using fallback", err);
+      data = null;
+    }
+
+    let hijriDate = "Hijri date unavailable";
+    if (data && data.data && data.data.hijri) {
+      const hijriMonthName = data.data.hijri.month.en;
+      const hijriDay = data.data.hijri.day;
+      const hijriYear = data.data.hijri.year;
+      hijriDate = `${hijriDay} ${hijriMonthName} ${hijriYear}`;
+    }
+
+    const dateEl = document.getElementById("dateDisplay");
+    if (dateEl) {
+      dateEl.innerHTML =
+        `<span class="gregorian">${dayName}, ${gregorianDate}</span><br>
+         <span class="hijri">${hijriDate}</span>`;
+    }
+  } catch (error) {
+    console.error("Date fetch error:", error);
+    const dateEl = document.getElementById("dateDisplay");
+    if (dateEl) dateEl.textContent = "Date unavailable";
+  }
+}
+fetchHijriDate();
+
+/* ===========================
+   2. Live Digital Clock (UK)
+   =========================== */
+
+function updateDigitalClock() {
+  const clockEl = document.getElementById("digitalClock");
+  if (!clockEl) return;
+
+  const now = new Date();
+  const options = { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit", second: "2-digit" };
+  clockEl.textContent = new Intl.DateTimeFormat("en-GB", options).format(now);
+}
+setInterval(updateDigitalClock, 1000);
+updateDigitalClock();
+
+/* ===========================
+   3. Analogue Clock
+   =========================== */
+
+function drawAnalogueClock(prayerTime) {
+  const canvas = document.getElementById("analogueClock");
+  if (!canvas || !prayerTime) return;
+
+  const ctx = canvas.getContext("2d");
+  const radius = canvas.height / 2;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(radius, radius);
+
+  // Face
+  ctx.beginPath();
+  ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Numbers
+  ctx.fillStyle = "#000";
+  ctx.font = "16px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let num = 1; num <= 12; num++) {
+    const ang = num * Math.PI / 6;
+    const x = Math.sin(ang) * (radius - 20);
+    const y = -Math.cos(ang) * (radius - 20);
+    ctx.fillText(num.toString(), x, y);
+  }
+
+  // Hands
+  const hours = prayerTime.getHours();
+  const minutes = prayerTime.getMinutes();
+
+  const hourAngle = ((hours % 12) + minutes / 60) * Math.PI / 6;
+  drawHand(ctx, hourAngle, radius * 0.5, 6);
+
+  const minuteAngle = (minutes * Math.PI / 30);
+  drawHand(ctx, minuteAngle, radius * 0.8, 4);
+}
+
+function drawHand(ctx, pos, length, width) {
+  ctx.beginPath();
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.moveTo(0, 0);
+  ctx.rotate(pos);
+  ctx.lineTo(0, -length);
+  ctx.stroke();
+  ctx.rotate(-pos);
+}
+
+/* ===========================
+   4. Image Slideshow
+   =========================== */
+
+let slideIndex = 0;
+function showSlides() {
+  const slides = document.getElementsByClassName("slide");
+  const dots = document.getElementsByClassName("dot");
+  if (!slides.length) return;
+
+  for (let i = 0; i < slides.length; i++) {
+    slides[i].style.display = "none";
+  }
+  slideIndex++;
+  if (slideIndex > slides.length) { slideIndex = 1; }
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" active-dot", "");
+  }
+  slides[slideIndex - 1].style.display = "block";
+  if (dots[slideIndex - 1]) {
+    dots[slideIndex - 1].className += " active-dot";
+  }
+  setTimeout(showSlides, 4000);
+}
+showSlides();
+
+/* ===========================
+   5. YouTube slide click
+   =========================== */
+
+document.querySelectorAll(".youtube-slide").forEach(slide => {
+  slide.addEventListener("click", function () {
+    const videoId = this.getAttribute("data-video");
+
+    this.innerHTML = `
+      <iframe width="100%" height="220"
+        src="https://www.youtube.com/embed/${videoId}?autoplay=0"
+        frameborder="0"
+        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        style="border-radius:12px;">
+      </iframe>
+    `;
+  });
+});
+
+/* ===========================
+   6. Configuration
+   =========================== */
+
+const CONFIG = {
+  mosqueName: "UKIM - Umar Masjid Blackheath",
+  method: 2,           // ISNA
+  tune: "0,0,0,0,0,0",
+  fridayAlertOffsetMin: 45,
+  jumuahTime: "13:00", // locked
+  offsets: { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 0, Isha: 15 },
+  manual: {
+    Fajr: "07:00",
+    Dhuhr: "13:00",
+    Asr: "14:30",
+    Maghrib: null,
+    Isha: "19:00"
+  }
+};
+
+/* ===========================
+   7. Theme toggle
+   =========================== */
+
+const root = document.documentElement;
+const themeToggle = document.getElementById('themeToggle');
+const storedTheme = localStorage.getItem('theme') || 'dark';
+if (storedTheme === 'light') root.classList.add('light');
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    root.classList.toggle('light');
+    localStorage.setItem('theme', root.classList.contains('light') ? 'light' : 'dark');
+  });
+}
+
+const mosqueNameEl = document.getElementById('mosqueName');
+if (mosqueNameEl) mosqueNameEl.textContent = CONFIG.mosqueName;
+
+/* ===========================
+   8. Helpers
+   =========================== */
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function parseHHMM(str) {
+  const [hh, mm] = str.split(':').map(Number);
+  const d = new Date();
+  d.setHours(hh, mm, 0, 0);
+  return d;
+}
+function addMinutes(date, minutes) {
+  const d = new Date(date.getTime());
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
+}
+function normalizeTime(str) {
+  if (!str) return "--:--";
+  const s = str.trim();
+  const ampmMatch = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+  if (ampmMatch) {
+    let h = parseInt(ampmMatch[1], 10);
+    const m = ampmMatch[2];
+    const ap = ampmMatch[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    return `${pad(h)}:${m}`;
+  }
+  const hmMatch = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hmMatch) {
+    return `${pad(hmMatch[1])}:${hmMatch[2]}`;
+  }
+  return s.replace(/\s*\(BST\)|\s*\(GMT\)|\s*\(UTC\)/gi, '');
+}
+
+/* ===========================
+   9. State
+   =========================== */
+
+const locationLabel = document.getElementById('locationLabel');
+const timesGrid = document.getElementById('timesGrid');
+const countdownLabel = document.getElementById('nextPrayerName');
+const countdownTime = document.getElementById('nextPrayerCountdown');
+
+let state = {
+  coords: null,
+  timings: {},
+  nextPrayer: null,
+  nextPrayerAt: null,
+  alertsEnabled: {}
+};
+
+// Load alert toggle state from localStorage
+try {
+  const savedAlerts = localStorage.getItem("alertsEnabled");
+  if (savedAlerts) {
+    state.alertsEnabled = JSON.parse(savedAlerts);
+  }
+} catch (e) {
+  console.warn("Failed to read alertsEnabled from localStorage", e);
+}
+
+/* ===========================
+   10. Qibla globals
+   =========================== */
+
+let qiblaAngleDeg = 118;      // default fallback
+let displayedQiblaAngleDeg = 118;
+let deviceHeadingDeg = 0;
+let useDeviceCompass = false;
+let qiblaAnimFrame = null;
+
+/* ===========================
+   11. Notifications
+   =========================== */
+
+function ensureNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+ensureNotificationPermission();
+
+/* Attach toggle + persist to localStorage */
+function attachToggle(el, key) {
+  // Restore previous state if exists
+  if (state.alertsEnabled[key]) {
+    el.classList.add('active');
+  }
+
+  el.addEventListener('click', () => {
+    el.classList.toggle('active');
+    state.alertsEnabled[key] = el.classList.contains('active');
+    try {
+      localStorage.setItem("alertsEnabled", JSON.stringify(state.alertsEnabled));
+    } catch (e) {
+      console.warn("Failed to save alertsEnabled", e);
+    }
+    scheduleAllAlerts();
+  });
+}
+
+/* ===========================
+   12. Init (fixed coordinates)
+   =========================== */
+
+function init() {
+  try {
+    state.coords = { lat: 52.47090674241149, lon: -2.0349274955544967 };
+    if (locationLabel) {
+      locationLabel.textContent = `${state.coords.lat.toFixed(4)}, ${state.coords.lon.toFixed(4)}`;
+    }
+
+    loadTimings().then(() => {
+      renderTimes();
+
+      // Wire Jumuah toggle (so Friday alert can be enabled)
+      const toggleJumuah = document.getElementById("toggleJumuah");
+      if (toggleJumuah) {
+        attachToggle(toggleJumuah, "Jumuah");
+      }
+
+      computeNextPrayer();
+      startCountdownTicker();
+      setInterval(updateUpcomingPrayer, 1000);
+      startJumuahCountdown();
+      scheduleAllAlerts();
+      initQibla();
+      loadWeather();
+    }).catch(err => {
+      console.error("loadTimings failed", err);
+    });
+  } catch (err) {
+    console.error("Init error", err);
+  }
+}
+
+/* ===========================
+   13. Device compass integration
+   =========================== */
+
+function initDeviceCompass() {
+  if (typeof DeviceOrientationEvent === "undefined") {
+    useDeviceCompass = false;
+    renderQiblaCompass();
+    updateFacingQibla();
+    return;
+  }
+
+  function handleOrientation(event) {
+    let heading;
+
+    if (typeof event.webkitCompassHeading !== "undefined") {
+      heading = event.webkitCompassHeading;
+    } else if (typeof event.alpha === "number") {
+      heading = 360 - event.alpha;
+    }
+
+    if (typeof heading === "number") {
+      deviceHeadingDeg = heading;
+      useDeviceCompass = true;
+      renderQiblaCompass();
+      updateFacingQibla();
+    }
+  }
+
+  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+    DeviceOrientationEvent.requestPermission()
+      .then((response) => {
+        if (response === "granted") {
+          window.addEventListener("deviceorientation", handleOrientation, true);
+        } else {
+          useDeviceCompass = false;
+          renderQiblaCompass();
+          updateFacingQibla();
+        }
+      })
+      .catch(() => {
+        useDeviceCompass = false;
+        renderQiblaCompass();
+        updateFacingQibla();
+      });
+  } else {
+    window.addEventListener("deviceorientation", handleOrientation, true);
+  }
+}
+
+/* ===========================
+   14. Qibla calculation + rendering
+   =========================== */
+
+function calculateQibla(lat, lon) {
+  const kaabaLat = 21.4225 * Math.PI / 180;
+  const kaabaLon = 39.8262 * Math.PI / 180;
+  const userLat = lat * Math.PI / 180;
+  const userLon = lon * Math.PI / 180;
+
+  const numerator = Math.sin(kaabaLon - userLon);
+  const denominator =
+    Math.cos(userLat) * Math.tan(kaabaLat) -
+    Math.sin(userLat) * Math.cos(kaabaLon - userLon);
+
+  let angle = Math.atan2(numerator, denominator);
+  angle = angle * 180 / Math.PI;
+
+  return (angle + 360) % 360;
+}
+
+function renderQiblaCompass() {
+  const canvas = document.getElementById("qiblaCompass");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const radius = canvas.height / 2;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(radius, radius);
+
+  ctx.beginPath();
+  ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = "#000";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("N", 0, -(radius - 18));
+  ctx.fillText("S", 0, (radius - 18));
+  ctx.fillText("E", (radius - 18), 0);
+  ctx.fillText("W", -(radius - 18), 0);
+
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-18, -16, 36, 26);
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(-18, -16, 36, 10);
+  ctx.fillStyle = "#facc15";
+  ctx.fillRect(-18, -6, 36, 4);
+
+  const relativeAngleDeg = displayedQiblaAngleDeg - (useDeviceCompass ? deviceHeadingDeg : 0);
+  const angle = relativeAngleDeg * Math.PI / 180;
+
+  ctx.save();
+  ctx.rotate(angle);
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, -radius + 25);
+  ctx.strokeStyle = "#22c55e";
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(0, -radius + 25, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = "#22c55e";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function animateQiblaTo(targetAngle) {
+  if (qiblaAnimFrame) cancelAnimationFrame(qiblaAnimFrame);
+
+  const normalize = (a) => {
+    a = a % 360;
+    if (a < 0) a += 360;
+    return a;
+  };
+
+  targetAngle = normalize(targetAngle);
+  let current = normalize(displayedQiblaAngleDeg);
+
+  function step() {
+    const diff = ((targetAngle - current + 540) % 360) - 180;
+    const delta = diff * 0.12;
+
+    if (Math.abs(diff) < 0.2) {
+      displayedQiblaAngleDeg = targetAngle;
+      renderQiblaCompass();
+      updateFacingQibla();
+      return;
+    }
+
+    current = normalize(current + delta);
+    displayedQiblaAngleDeg = current;
+    renderQiblaCompass();
+    updateFacingQibla();
+    qiblaAnimFrame = requestAnimationFrame(step);
+  }
+
+  step();
+}
+
+function updateFacingQibla() {
+  const el = document.getElementById("facingQibla");
+  if (!el) return;
+
+  const diffRaw = displayedQiblaAngleDeg - (useDeviceCompass ? deviceHeadingDeg : 0);
+  let diff = ((diffRaw + 540) % 360) - 180;
+
+  if (Math.abs(diff) <= 10) {
+    el.textContent = "You are facing Qibla";
+    el.style.color = "var(--accent)";
+  } else {
+    el.textContent = `Qibla: ${Math.round(qiblaAngleDeg)}°`;
+    el.style.color = "var(--warning)";
+  }
+}
+
+function initQibla() {
+  if (!state.coords) return;
+  qiblaAngleDeg = calculateQibla(state.coords.lat, state.coords.lon);
+  displayedQiblaAngleDeg = qiblaAngleDeg;
+  animateQiblaTo(qiblaAngleDeg);
+  initDeviceCompass();
+}
+
+/* ===========================
+   15. Load timings with safety
+   =========================== */
+
+async function loadTimings() {
+  const today = new Date();
+  const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
+
+  try {
+    let sunriseStrRaw = "";
+    let sunsetStrRaw = "";
+
+    try {
+      const sunRes = await fetch(
+        `https://api.sunrisesunset.io/json?lat=${state.coords.lat}&lng=${state.coords.lon}&timezone=auto&date=${y}-${pad(m)}-${pad(d)}`
+      );
+      const sunJson = await sunRes.json();
+      sunriseStrRaw = sunJson?.results?.sunrise || "";
+      sunsetStrRaw = sunJson?.results?.sunset || "";
+    } catch (err) {
+      console.warn("Sunrise/Sunset API failed, using fallback");
+      sunriseStrRaw = "08:00";
+      sunsetStrRaw = "17:00";
+    }
+
+    const params = new URLSearchParams({
+      latitude: state.coords.lat,
+      longitude: state.coords.lon,
+      method: CONFIG.method,
+      tune: CONFIG.tune,
+    });
+    const res = await fetch(`https://api.aladhan.com/v1/timings/${d}-${m}-${y}?${params.toString()}`);
+    const json = await res.json();
+    const t = json.data.timings;
+
+    state.timings = {
+      Fajr: normalizeTime(CONFIG.manual.Fajr ?? t.Fajr),
+      Sunrise: normalizeTime(sunriseStrRaw) || normalizeTime(t.Sunrise),
+      Dhuhr: normalizeTime(CONFIG.manual.Dhuhr ?? t.Dhuhr),
+      Asr: normalizeTime(CONFIG.manual.Asr ?? t.Asr),
+      Maghrib: normalizeTime(sunsetStrRaw) || normalizeTime(t.Maghrib),
+      Isha: normalizeTime(CONFIG.manual.Isha ?? t.Isha),
+    };
+  } catch (err) {
+    console.error("Timing API failed, using manual fallback", err);
+    state.timings = {
+      Fajr: CONFIG.manual.Fajr || "07:00",
+      Sunrise: "08:00",
+      Dhuhr: CONFIG.manual.Dhuhr || "13:00",
+      Asr: CONFIG.manual.Asr || "14:30",
+      Maghrib: "17:00",
+      Isha: CONFIG.manual.Isha || "19:00"
+    };
+  }
+}
+
+/* ===========================
+   16. Render times (adds IDs)
+   =========================== */
+
+function renderTimes() {
+  if (!timesGrid) return;
+  timesGrid.innerHTML = '';
+  const order = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  order.forEach(name => {
+    const rowName = document.createElement('div');
+    rowName.className = 'name';
+    rowName.textContent = name;
+
+    const rowTime = document.createElement('div');
+    rowTime.className = 'badge';
+    rowTime.textContent = state.timings[name];
+
+    if (['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].includes(name)) {
+      rowTime.id = name.toLowerCase() + "Time";
+    }
+
+    const toggle = document.createElement('div');
+    toggle.className = 'notify-toggle';
+    if (['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].includes(name)) {
+      toggle.dataset.prayer = name;
+      attachToggle(toggle, name);
+    } else {
+      toggle.style.opacity = 0.35;
+      toggle.style.pointerEvents = 'none';
+    }
+
+    timesGrid.appendChild(rowName);
+    timesGrid.appendChild(rowTime);
+    timesGrid.appendChild(toggle);
+  });
+}
+
+/* ===========================
+   17. Upcoming prayer logic
+   =========================== */
+
+function computeNextPrayer() {
+  if (!state.timings || !Object.keys(state.timings).length) return;
+
+  const now = new Date();
+  const candidates = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  let nextName = null, nextAt = null;
+  for (const name of candidates) {
+    const dt = parseHHMM(state.timings[name]);
+    if (dt > now) { nextName = name; nextAt = dt; break; }
+  }
+  if (!nextName) {
+    const dt = parseHHMM(state.timings['Fajr']);
+    dt.setDate(dt.getDate() + 1);
+    nextName = 'Fajr';
+    nextAt = dt;
+  }
+  state.nextPrayer = nextName;
+  state.nextPrayerAt = nextAt;
+  if (countdownLabel) countdownLabel.textContent = nextName;
+  drawAnalogueClock(state.nextPrayerAt);
+}
+
+function startCountdownTicker() {
+  function tick() {
+    if (!state.nextPrayerAt || !countdownTime) return;
+    const now = new Date();
+    const ms = state.nextPrayerAt - now;
+    if (ms <= 0) {
+      computeNextPrayer();
+      return;
+    }
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    countdownTime.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+function updateUpcomingPrayer() {
+  if (!state.nextPrayerAt) return;
+  const now = new Date();
+  const diff = state.nextPrayerAt - now;
+  if (diff <= 0) {
+    computeNextPrayer();
+    return;
+  }
+  drawAnalogueClock(state.nextPrayerAt);
+}
+
+/* ===========================
+   18. Weekly Jumuah countdown
+   =========================== */
+
+function getNextJumuah() {
+  const now = new Date();
+  const [hh, mm] = CONFIG.jumuahTime.split(':').map(Number);
+  const target = new Date(now);
+
+  if (now.getDay() === 5) {
+    target.setHours(hh, mm, 0, 0);
+    if (target > now) {
+      return target;
+    }
+  }
+
+  const daysUntilFriday = (5 - now.getDay() + 7) % 7 || 7;
+  target.setDate(now.getDate() + daysUntilFriday);
+  target.setHours(hh, mm, 0, 0);
+  return target;
+}
+
+function startJumuahCountdown() {
+  const el = document.getElementById('jumuahCountdown');
+  if (!el) return;
+
+  function tick() {
+    const now = new Date();
+    const target = getNextJumuah();
+    const ms = target - now;
+    if (ms <= 0) {
+      el.textContent = "00 00 00";
+      return;
+    }
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+
+    if (days > 0) {
+      el.textContent = `${pad(days)}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+    } else {
+      el.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ===========================
+   19. Directions button
+   =========================== */
+
+const directionsBtn = document.getElementById("directionsBtn");
+if (directionsBtn) {
+  directionsBtn.addEventListener("click", () => {
+    const lat = 52.4709;
+    const lon = -2.0349;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, "_blank");
+  });
+}
+
+/* ===========================
+   20. Alert scheduling + Azan
+   =========================== */
+
+let scheduled = [];
+function clearAlerts() {
+  scheduled.forEach(id => clearTimeout(id));
+  scheduled = [];
+}
+
+function scheduleAlertAt(date, title, body) {
+  const delay = date - new Date();
+  if (delay <= 0) return;
+  const id = setTimeout(() => {
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body });
+      }
+    } catch (e) {}
+
+    const audio = document.getElementById('azanAudio');
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+  }, delay);
+  scheduled.push(id);
+}
+
+function scheduleAllAlerts() {
+  clearAlerts();
+  if (!state.timings || !Object.keys(state.timings).length) return;
+
+  for (const [name, offset] of Object.entries(CONFIG.offsets)) {
+    if (!state.timings[name]) continue;
+    if (!state.alertsEnabled[name]) continue;
+    const time = parseHHMM(state.timings[name]);
+    const alertTime = addMinutes(time, -offset);
+    scheduleAlertAt(alertTime, `${name} Azan`, `${offset === 0 ? 'Now' : `${offset} min`} before ${name}`);
+  }
+  if (state.alertsEnabled['Jumuah']) {
+    const nextFriday = getNextJumuah();
+    const alertTime = addMinutes(nextFriday, -CONFIG.fridayAlertOffsetMin);
+    scheduleAlertAt(alertTime, 'Jumuah Reminder', `${CONFIG.fridayAlertOffsetMin} min before Jumuah`);
+  }
+}
+
+/* ===========================
+   21. Blog read-more
+   =========================== */
+
+document.addEventListener("click", function (e) {
+  if (e.target.classList.contains("read-more")) {
+    const preview = e.target.previousElementSibling;
+    preview.classList.toggle("expanded");
+
+    e.target.textContent = preview.classList.contains("expanded")
+      ? "Show less"
+      : "Read more";
+  }
+});
+
+/* ===========================
+   22. Weather (safe)
+   =========================== */
+
+async function loadWeather() {
+  try {
+    const lat = state.coords.lat;
+    const lon = state.coords.lon;
+
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+    );
+    const data = await res.json();
+
+    const temp = data.current_weather.temperature;
+    const wind = data.current_weather.windspeed;
+    const code = data.current_weather.weathercode;
+
+    const icons = {
+      0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+      45: "🌫️", 48: "🌫️",
+      51: "🌦️", 53: "🌦️", 55: "🌦️",
+      61: "🌧️", 63: "🌧️", 65: "🌧️",
+      71: "❄️", 73: "❄️", 75: "❄️",
+      95: "⛈️", 96: "⛈️", 99: "⛈️"
+    };
+
+    const icon = icons[code] || "🌤️";
+
+    let tempColor = "#22c55e";
+    if (temp <= 0) tempColor = "#3b82f6";
+    else if (temp <= 10) tempColor = "#0ea5e9";
+    else if (temp <= 20) tempColor = "#22c55e";
+    else if (temp <= 30) tempColor = "#f59e0b";
+    else tempColor = "#ef4444";
+
+    const weatherEl = document.getElementById("weatherBox");
+    if (weatherEl) {
+      weatherEl.innerHTML = `
+        <div style="font-size:18px;">${icon}</div>
+        <div style="font-size:16px; font-weight:600; color:${tempColor};">
+          ${temp}°C
+        </div>
+        <div style="font-size:12px; opacity:0.8;">
+          💨 ${wind} km/h
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error("Weather error", err);
+    const weatherEl = document.getElementById("weatherBox");
+    if (weatherEl) weatherEl.textContent = "Weather unavailable";
+  }
+}
+
+/* ===========================
+   23. YouTube slideshow auto
+   =========================== */
+
+let ytIndex = 0;
+function ytShowSlides() {
+  let slides = document.getElementsByClassName("yt-slide");
+  let dots = document.getElementsByClassName("yt-dot");
+  if (!slides.length) return;
+
+  for (let i = 0; i < slides.length; i++) {
+    slides[i].style.display = "none";
+  }
+
+  ytIndex++;
+  if (ytIndex > slides.length) ytIndex = 1;
+
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" active-dot", "");
+  }
+
+  slides[ytIndex - 1].style.display = "block";
+  if (dots[ytIndex - 1]) {
+    dots[ytIndex - 1].className += " active-dot";
+  }
+
+  setTimeout(ytShowSlides, 4000);
+}
+ytShowSlides();
+
+/* ===========================
+   24. Audio unlock for mobile
+   =========================== */
+
+document.body.addEventListener("click", function () {
+  const audio = document.getElementById("azanAudio");
+  if (audio) {
+    audio.play().catch(() => {});
+    audio.pause();
+  }
+}, { once: true });
+
+/* ===========================
+   25. Kickoff
+   =========================== */
+
+init();
+
+}); // end DOMContentLoaded
+</script>
+
+<script src="azan-alerts.js"></script> 
+
+</body>
+</html>

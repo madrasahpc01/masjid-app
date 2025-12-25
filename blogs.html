@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>All Blogs – Umar Masjid</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #1f2937;
+      --primary: #2563eb;
+      --shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .blogs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .blog-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 12px;
+      line-height: 1.6;
+    }
+
+    .blog-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    .back-btn {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+
+    .blog-text {
+      opacity: 0.85;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Back Button -->
+    <a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+    <!-- Page Title -->
+    <div class="card">
+      <div class="section-title">All Blogs</div>
+      <div style="opacity:0.7;">Explore all community updates, programs, and reflections.</div>
+    </div>
+
+    <!-- All Blogs List -->
+    <div class="blogs-grid">
+
+      <div class="blog-card">
+        <strong>📖 Quran Madrasah</strong>
+        <div class="blog-text">
+Every afternoon, from 5PM to 7PM our mosque comes alive with the gentle hum of children reciting the words of Allah. Our Quran Madrasah is more than a classroom — it is a space where faith, discipline, and joy come together to shape the next generation. Students learn Qaida, Tajweed, Quran Recitation, Hifz, Hadith & Islamic Studies.
+        </div>
+      </div>
+
+      <div class="blog-card">
+        <strong>🌙 Regular Quran Classes</strong>
+        <div class="blog-text">
+Our mosque holds regular Quran Grammar Classes for adults every Monday and Friday in Urdu, and every Wednesday in English. These sessions help learners understand the language of the Qur’an, learn word meanings, and grasp essential Arabic grammar rules.
+        </div>
+      </div>
+
+      <div class="blog-card">
+        <strong>🌸 Sisters’ Circles</strong>
+        <div class="blog-text">
+Every week, our mosque opens its doors to a beautiful gathering of sisters who come together to learn, reflect, and grow in their understanding of Islam. These circles offer a welcoming space for women of all ages.
+        </div>
+      </div>
+
+      <div class="blog-card">
+        <strong>🌟 Mini Muslims</strong>
+        <div class="blog-text">
+Every Sunday, from 11:00 AM to 12:30 PM, our mosque welcomes young children to our Mini Muslims class — a joyful space where little ones learn about Islam through stories, crafts, and engaging activities.
+        </div>
+      </div>
+
+      <div class="blog-card">
+        <strong>🍽️ Monthly Food Hub</strong>
+        <div class="blog-text">
+Every last Saturday of the month, our mosque hosts a warm and welcoming Food Hub. Families and individuals visit to collect essential food items and enjoy friendly conversations in a caring environment.
+        </div>
+      </div>
+
+      <div class="blog-card">
+        <strong>🕌 Masjid Improvements</strong>
+        <div class="blog-text">
+Our masjid is continually growing and improving. Recent upgrades have helped create a cleaner, safer, and more welcoming environment for worshippers of all ages.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</body>
+</html>
