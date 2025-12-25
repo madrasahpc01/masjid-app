@@ -1,10 +1,12 @@
 /* ---------------------------------------------------------
-   AZAN + JUMUAH ALERT SYSTEM – Umar Masjid App
+   AZAN + JUMUAH ALERT SYSTEM – Umar Masjid App (Toggle Ready)
 --------------------------------------------------------- */
 
 console.log("Azan & Jumuah Alert System Loaded");
 
-// Unlock audio on mobile (required for iPhone/Android)
+/* ---------------------------------------------------------
+   1. Unlock audio on mobile (required for iPhone/Android)
+--------------------------------------------------------- */
 document.body.addEventListener(
   "click",
   function () {
@@ -17,12 +19,32 @@ document.body.addEventListener(
   { once: true }
 );
 
-// Trackers
-let azanPlayed = false;
-let jumuahAlertPlayed = false;
+/* ---------------------------------------------------------
+   2. Toggle System (Save + Load)
+--------------------------------------------------------- */
+function saveToggle(prayer, enabled) {
+  localStorage.setItem("alert_" + prayer, enabled ? "1" : "0");
+}
+
+function loadToggle(prayer) {
+  return localStorage.getItem("alert_" + prayer) === "1";
+}
+
+/* Attach toggle click behaviour */
+function attachToggle(toggle, prayerName) {
+  // Restore saved state
+  const enabled = loadToggle(prayerName);
+  if (enabled) toggle.classList.add("active");
+
+  toggle.addEventListener("click", () => {
+    toggle.classList.toggle("active");
+    const isActive = toggle.classList.contains("active");
+    saveToggle(prayerName, isActive);
+  });
+}
 
 /* ---------------------------------------------------------
-   Helper: Get current time HH:MM
+   3. Helper: Get current time HH:MM
 --------------------------------------------------------- */
 function getCurrentTime() {
   const now = new Date();
@@ -30,20 +52,20 @@ function getCurrentTime() {
 }
 
 /* ---------------------------------------------------------
-   Helper: Read prayer times from DOM
+   4. Helper: Read prayer times from DOM
 --------------------------------------------------------- */
 function getPrayerTimes() {
   return {
-    fajr: document.getElementById("fajrTime")?.innerText?.trim(),
-    dhuhr: document.getElementById("dhuhrTime")?.innerText?.trim(),
-    asr: document.getElementById("asrTime")?.innerText?.trim(),
-    maghrib: document.getElementById("maghribTime")?.innerText?.trim(),
-    isha: document.getElementById("ishaTime")?.innerText?.trim(),
+    Fajr: document.getElementById("fajrTime")?.innerText?.trim(),
+    Dhuhr: document.getElementById("dhuhrTime")?.innerText?.trim(),
+    Asr: document.getElementById("asrTime")?.innerText?.trim(),
+    Maghrib: document.getElementById("maghribTime")?.innerText?.trim(),
+    Isha: document.getElementById("ishaTime")?.innerText?.trim(),
   };
 }
 
 /* ---------------------------------------------------------
-   Helper: Show popup notification
+   5. Popup Notification
 --------------------------------------------------------- */
 function showPopup(message) {
   let popup = document.createElement("div");
@@ -74,8 +96,10 @@ function showPopup(message) {
 }
 
 /* ---------------------------------------------------------
-   Jumuah Alert Logic (45 minutes before Khutbah)
+   6. Jumuah Alert (Toggle‑Controlled)
 --------------------------------------------------------- */
+let jumuahAlertPlayed = false;
+
 function checkJumuahAlert() {
   const today = new Date().getDay(); // 5 = Friday
   if (today !== 5) {
@@ -83,10 +107,12 @@ function checkJumuahAlert() {
     return;
   }
 
-  const khutbahTime = "13:00"; // FIXED TIME
+  // Check toggle
+  if (!loadToggle("Jumuah")) return;
+
+  const khutbahTime = "13:00"; // fixed
   const now = new Date();
 
-  // Convert times to minutes
   function toMinutes(t) {
     const [h, m] = t.split(":").map(Number);
     return h * 60 + m;
@@ -95,49 +121,53 @@ function checkJumuahAlert() {
   const khutbahMinutes = toMinutes(khutbahTime);
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  // 45 minutes before khutbah
   if (nowMinutes === khutbahMinutes - 45) {
     if (!jumuahAlertPlayed) {
       showPopup("🕌 Jumuah Reminder: 45 minutes left until Khutbah");
       const audio = document.getElementById("azanAudio");
-      audio.play().catch(() => {});
+      audio?.play().catch(() => {});
       jumuahAlertPlayed = true;
     }
   }
 
-  // Reset after khutbah
   if (nowMinutes > khutbahMinutes) {
     jumuahAlertPlayed = false;
   }
 }
 
 /* ---------------------------------------------------------
-   Main Azan Checker
+   7. Main Azan Checker (Toggle‑Controlled)
 --------------------------------------------------------- */
+let azanPlayed = false;
+
 function checkAzanAlert() {
   const currentTime = getCurrentTime();
   const audio = document.getElementById("azanAudio");
-
   if (!audio) return;
 
   const times = getPrayerTimes();
-  const prayerTimes = Object.values(times).filter(Boolean);
 
-  if (prayerTimes.length < 5) return;
+  for (const [prayer, time] of Object.entries(times)) {
+    if (!time) continue;
 
-  if (prayerTimes.includes(currentTime)) {
-    if (!azanPlayed) {
-      showPopup("🔊 Azan Time");
-      audio.play().catch((err) => console.warn("Audio blocked:", err));
-      azanPlayed = true;
+    // Skip if toggle is OFF
+    if (!loadToggle(prayer)) continue;
+
+    if (currentTime === time) {
+      if (!azanPlayed) {
+        showPopup(`🔊 ${prayer} Time`);
+        audio.play().catch(() => {});
+        azanPlayed = true;
+      }
+      return;
     }
-  } else {
-    azanPlayed = false;
   }
+
+  azanPlayed = false;
 }
 
 /* ---------------------------------------------------------
-   Run both checkers every second
+   8. Run both checkers every second
 --------------------------------------------------------- */
 setInterval(() => {
   checkAzanAlert();
