@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <title>Mosque Prayer Times</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -711,6 +713,22 @@
       Enable alerts
     </div>
 
+    <div style="text-align:center; margin-top:10px;">
+      <button id="enablePushBtn"
+              style="
+                background: var(--primary);
+                color:#fff;
+                border:none;
+                padding:6px 14px;
+                border-radius:8px;
+                font-size:13px;
+                font-weight:600;
+                cursor:pointer;
+              ">
+        Enable Azan Notifications
+      </button>
+    </div>
+
     <!-- Prayer Times Grid (untouched) -->
     <div class="times" id="timesGrid"></div>
 
@@ -1024,6 +1042,19 @@
     src="https://cdn.islamic.network/audio/adhan/adhan.mp3"></audio>
 
 <script>
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('Service worker registered', reg.scope);
+      })
+      .catch(err => {
+        console.error('Service worker registration failed', err);
+      });
+  });
+}
+
 if (!navigator.onLine) {
   console.warn("Offline mode detected");
 }
@@ -1213,9 +1244,9 @@ const CONFIG = {
   jumuahTime: "13:00", // locked
   offsets: { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 0, Isha: 15 },
   manual: {
-    Fajr: "08:12",
+    Fajr: "09:05",
     Dhuhr: "13:00",
-    Asr: "15:35",
+    Asr: "14:30",
     Maghrib: null,
     Isha: "19:00"
   }
@@ -1339,7 +1370,7 @@ function attachToggle(el, key) {
     } catch (e) {
       console.warn("Failed to save alertsEnabled", e);
     }
-    scheduleAllAlerts();
+   // scheduleAllAlerts();
   });
 }
 
@@ -1997,12 +2028,76 @@ document.querySelectorAll("a[target='_blank']").forEach(link => {
 init();
 
 }); // end DOMContentLoaded
+
+// ============================
+// PWA Push Subscription
+// ============================
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn('Push notifications not supported in this browser.');
+    return;
+  }
+
+  const reg = await navigator.serviceWorker.ready;
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.warn('Notification permission not granted');
+    return;
+  }
+
+  // TODO: replace with your actual VAPID PUBLIC KEY (Base64 URL)
+  const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_BASE64URL';
+  const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+
+  const subscription = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: convertedKey
+  });
+
+  console.log('Push subscription created:', subscription);
+
+  // Send subscription to your backend
+  try {
+    await fetch('/api/save-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscription)
+    });
+    console.log('Subscription sent to server');
+  } catch (err) {
+    console.error('Failed to send subscription to server', err);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Attach to button
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'enablePushBtn') {
+    subscribeToPush().catch(err => console.error(err));
+  }
+});
+
 </script>
 
-<audio id="azanAudio" src="azan.mp3"></audio>
+<audio id="azanAudio" src="azan.mp3" preload="auto"></audio>
 <script src="azan-alerts.js"></script>
 
 </body>
 
 </html>
-
